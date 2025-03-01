@@ -3,21 +3,14 @@
 SERVER_IP="$1";
 SOLUTION="$2";
 
-git add "$SOLUTION/";
-git commit -m "$SOLUTION solution iteration";
-git push;
+cd "$SOLUTION"
+go build -o "$SOLUTION".out
+scp ./"$SOLUTION".out root@66.228.43.192:/root/apps/protohackers-go/"$SOLUTION"
 
 ssh -tt -o StrictHostKeyChecking=no -l root "$SERVER_IP" <<ENDSSH
-cd /root/apps/protohackers;
+cd /root/apps/protohackers-go/"$SOLUTION"/
 
-git checkout "$SOLUTION";
-git pull origin "$SOLUTION";
-
-cd /root/apps/protohackers/"$SOLUTION"/
-go build
-./"$SOLUTION"
-
-git checkout .
+./"$SOLUTION".out
 
 exit
 ENDSSH

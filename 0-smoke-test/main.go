@@ -2,17 +2,18 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 )
 
 func main() {
-	ln, err := net.Listen("tcp", "66.228.43.192:6767")
+	ln, err := net.Listen("tcp", "0.0.0.0:6767")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	defer ln.Close()
 
-	// Accept incoming connections and handle them
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -20,24 +21,32 @@ func main() {
 			continue
 		}
 
-		// Handle the connection in a new goroutine
 		go handleConnection(conn)
 	}
 }
 
 func handleConnection(conn net.Conn) {
-	// Close the connection when we're done
 	defer conn.Close()
 
-	// Read incoming data
-	buf := make([]byte, 1024)
-	_, err := conn.Read(buf)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	buf := make([]byte, 4096)
 
-	// Print the incoming data
-	fmt.Printf("Received: %s", buf)
-	conn.Write(buf)
+	for {
+		n, err := conn.Read(buf)
+		if err != nil {
+			if err != io.EOF {
+				fmt.Println("reader.Read failed:", err)
+			}
+			break
+		}
+
+		if n > 0 {
+			fmt.Printf("Received: %s\n", buf)
+
+			_, err := conn.Write(buf[:n])
+			if err != nil {
+				fmt.Println("conn.Write failed:", err)
+				break
+			}
+		}
+	}
 }
